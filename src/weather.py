@@ -1,6 +1,15 @@
 from dotenv import load_dotenv
 import os
 import httpx
+from pydantic import BaseModel
+
+class CurrentWeather(BaseModel):
+    temperature_2m: float
+    wind_speed_10m: float
+    weather_code: int
+
+class WeatherResponse(BaseModel):
+    current: CurrentWeather
 
 load_dotenv()
 
@@ -14,7 +23,7 @@ COORDINATES = {
     }
 }
 
-def get_weather(location: str) -> dict:
+def get_weather(location: str) -> WeatherResponse:
     coords = COORDINATES.get(location)
     if not coords:
         raise ValueError(f"Unknown location: {location}")
@@ -29,7 +38,7 @@ def get_weather(location: str) -> dict:
     try:
         response = httpx.get(url, params = params, timeout = 10.0)
         response.raise_for_status()
-        return response.json()
+        return WeatherResponse(**response.json())
     except httpx.TimeoutException:
         raise RuntimeError("Weather API timed out — check your connection")
     except httpx.HTTPStatusError as e:
@@ -37,9 +46,8 @@ def get_weather(location: str) -> dict:
     except httpx.RequestError as e:
         raise RuntimeError(f"Could not reach Weather API: {e}")
 
-
-def parse_weather(data: dict) -> str:
-    current = data["current"]
-    temp = current["temperature_2m"]
-    wind = current["wind_speed_10m"]
+def parse_weather(data: WeatherResponse) -> str:
+    current = data.current
+    temp = current.temperature_2m
+    wind = current.wind_speed_10m
     return f"Temperature: {temp}°C | Wind: {wind} km/h"
