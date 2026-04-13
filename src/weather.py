@@ -50,4 +50,17 @@ def parse_weather(data: WeatherResponse) -> str:
     current = data.current
     temp = current.temperature_2m
     wind = current.wind_speed_10m
-    return f"Temperature: {temp}°C | Wind: {wind} km/h"
+    weather_condition = describe_conditions(current.weather_code)
+    return f"Temperature: {temp}°C | Wind: {wind} km/h | Weather Condition: {weather_condition}"
+
+def describe_conditions(code: int) -> str:
+    if code == 0:
+        return "Clear Sky!"
+    elif code >= 1 and code <= 3:
+        return "Partly Cloudy!"
+    elif code in (45, 48):
+        return "Fog!"
+    elif code in (61, 63, 65):
+        return "Rain!"
+    else:
+        return "Unknown!"
