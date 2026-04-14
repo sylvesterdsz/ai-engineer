@@ -1,5 +1,3 @@
-from dotenv import load_dotenv
-import os
 import httpx
 from pydantic import BaseModel
 
@@ -11,10 +9,6 @@ class CurrentWeather(BaseModel):
 class WeatherResponse(BaseModel):
     current: CurrentWeather
 
-load_dotenv()
-
-LOCATION_NAME = os.getenv("LOCATION_NAME","Melbourne")
-
 # Melbourne coordinates — hardcoded for now, we'll make this dynamic later
 COORDINATES = {
     "Melbourne": {
@@ -23,7 +17,7 @@ COORDINATES = {
     }
 }
 
-def get_weather(location: str) -> WeatherResponse:
+async def get_weather(client: httpx.AsyncClient, location: str) -> WeatherResponse:
     coords = COORDINATES.get(location)
     if not coords:
         raise ValueError(f"Unknown location: {location}")
@@ -36,7 +30,7 @@ def get_weather(location: str) -> WeatherResponse:
     }
 
     try:
-        response = httpx.get(url, params = params, timeout = 10.0)
+        response = await client.get(url, params = params, timeout = 10.0)
         response.raise_for_status()
         return WeatherResponse(**response.json())
     except httpx.TimeoutException:
